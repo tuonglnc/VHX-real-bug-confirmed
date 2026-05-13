@@ -69,7 +69,33 @@ libraries/
 
 ## Contributing
 
-Each vulnerability should be placed in its own folder following the structure above, with at least an `analysis.md` containing:
+### Workflow
+
+1. **Tạo branch mới** từ `main` cho mỗi vulnerability hoặc thay đổi:
+   ```bash
+   git checkout main && git pull
+   git checkout -b <tên-branch>
+   ```
+   Tên branch gợi ý: `<library>-<vulnerability-name>`, ví dụ `flac-toctou-race-condition`.
+
+2. **Làm việc trên branch**, commit khi hoàn thành một đơn vị logic.
+
+3. **Tạo PR** để review trước khi merge vào `main`.
+
+4. **Merge** — squash merge hoặc merge commit đều được.
+
+### Commit Convention
+
+- Dùng tiếng Anh, câu lệnh (imperative), không dấu chấm cuối:
+  - `Add analysis for flac TOCTOU race condition`
+  - `Fix poc buffer overflow in libevent`
+  - `Update vendor confirmation for gradio`
+- Prefix phổ biến: `Add`, `Update`, `Fix`, `Remove`
+- Mỗi commit nên là một thay đổi logic duy nhất (atomic commit).
+
+### Folder Structure
+
+Each vulnerability should be placed in its own folder following the structure below, with at least an `analysis.md` containing:
 
 1. **Description** — vulnerability type, location in source code
 2. **Data flow** — data flow from source to sink
