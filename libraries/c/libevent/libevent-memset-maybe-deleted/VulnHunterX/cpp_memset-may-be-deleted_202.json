@@ -1,0 +1,49 @@
+{
+  "finding": {
+    "rule_id": "cpp/memset-may-be-deleted",
+    "message": "Call to memset may be deleted by the compiler.",
+    "file": "sha1.c",
+    "start_line": 202,
+    "end_line": 202,
+    "repo_name": "libevent",
+    "lang": "c",
+    "sarif_path": "/home/caterpie/VulnHunterX/output/c/libevent/libevent.sarif",
+    "tool": "CodeQL",
+    "dataflow_path": [],
+    "severity": "7.8",
+    "precision": "high",
+    "cwe_ids": [],
+    "tags": [
+      "security",
+      "external/cwe/cwe-14"
+    ],
+    "related_locations": []
+  },
+  "verdict": "True Positive",
+  "confidence": "High",
+  "confidence_score": 0.9,
+  "reasoning": "The `memset(block, '\\0', sizeof(block))` on line 202 is a classic dead-store elimination target because `block` is a local variable that is never read after the memset. Under the C standard, compilers are allowed to remove this call. This is a well-known cryptographic vulnerability pattern where sensitive intermediate state could be left on the stack. The fix is to use a compiler-resistant erasure function like `explicit_bzero`, `SecureZeroMemory`, or `memset_s`.",
+  "answers": [
+    "This is not a data-flow vulnerability from user input; the 'source' here is sensitive intermediate state (the `block` array) that was copied from the `buffer` parameter on line 13 via `memcpy(block, buffer, 64)`.",
+    "Data flows from `buffer` parameter (line 1) \u2192 `block` local array (line 13, memcpy) \u2192 used in SHA1 rounds (lines 21-100) \u2192 `memset(block, '\\0', sizeof(block))` on line 202.",
+    "No validation or sanitization is relevant here. The concern is that the `memset` on line 202 is a dead-store optimization target because `block` goes out of scope immediately after the memset without any subsequent read.",
+    "The sink is the end of the function scope (line 203). The dangerous operation is the compiler potentially optimizing away the `memset` on line 202, leaving sensitive hash state data on the stack.",
+    "No intermediate transformations between source and sink that would affect this vulnerability type (compiler dead-store elimination).",
+    "No framework or library protections apply here; this is a bare-metal C compiler optimization issue.",
+    "Not applicable to this vulnerability type \u2014 any caller that invokes `SHA1Transform` with `SHA1HANDSOFF` defined will execute this code path, regardless of privilege level.",
+    "No, this is not dead code or a test file. The caller `SHA1Update` clearly invokes `SHA1Transform` on line 10 of the pre-fetched context.",
+    "Information disclosure \u2014 sensitive data (intermediate SHA1 state) could remain on the stack and be leaked to an attacker via a subsequent memory read vulnerability.",
+    "The weakest link is the use of plain `memset` on line 202 for security-sensitive data erasure, which the C standard permits compilers to optimize away. There is no defense against this in the current code."
+  ],
+  "context_needed": [],
+  "iterations": 1,
+  "model": "glm-5-turbo",
+  "timestamp": "2026-05-12T11:28:55.960167",
+  "elapsed_seconds": 12.053970098495483,
+  "tokens_used": 4140,
+  "input_tokens": 3537,
+  "output_tokens": 603,
+  "cached_input_tokens": 3456,
+  "cost_usd": 0.0,
+  "data_flow": "buffer parameter (line 1) \u2192 block local array (line 13) \u2192 SHA1 round operations (lines 21-100) \u2192 memset attempted erasure (line 202) \u2192 function return / stack frame deallocation (line 203)"
+}
