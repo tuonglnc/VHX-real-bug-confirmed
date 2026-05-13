@@ -12,62 +12,41 @@ Each vulnerability is manually verified, analyzed in detail, and accompanied by 
 libraries/
 └── <language>/
     └── <library>/
+        ├── report.md                # Full vulnerability report
+        ├── summary_<library>_<timestamp>.json   # Scan metadata
         └── <vulnerability-name>/
-            ├── analysis.md          # Detailed vulnerability analysis (data flow, reasoning, impact)
-            ├── poc/                 # Proof of Concept / exploit code
-            ├── vendor-confirm/      # Vendor confirmation evidence (if available)
-            │   ├── email.md         # Communication with vendor
-            │   ├── advisory.md      # Vendor security advisory
-            │   └── ...
-            └── ...
-```
-
-### Example
-
-```
-libraries/
-└── c/
-    ├── flac/
-    │   ├── report.md
-    │   ├── summary_flac_20260512_130300.json
-    │   └── toctou-race-condition/
-    │       ├── analysis.md
-    │       ├── poc/
-    │       └── vendor-confirm/
-    │           ├── advisory.md
-    │           └── ...
-    └── libevent/
-        ├── report.md
-        ├── summary_libevent_20260512_080137.json
-        └── memset-deleted/
-            ├── analysis.md
-            └── ...
-└── python/
-    ├── gradio/
-    └── safety/
+            ├── VulnHunterX/         # Raw VulnHunterX scan output
+            │   ├── report.md
+            │   ├── <rule>_<id>.json
+            │   └── llm_conversations.md
+            └── manual_confirm/      # Manual verification & vendor confirmation
+                └── <vulnerability-name>.md
 ```
 
 ---
 
 ## Confirmed Vulnerabilities
 
+> Only vulnerabilities with manual confirmation (PoC / detailed analysis) are listed here.
+
 ### C
 
-| Library | Vulnerability | File | CWE | Vendor | Report |
-|---------|--------------|------|-----|:------:|--------|
-| **flac** | TOCTOU Race Condition | `src/share/grabbag/file.c:116` | CWE-367 | | |
-| **libevent** | memset Deleted by Compiler | `sha1.c:202` | CWE-14 | | |
-
+| Library | Vulnerability | File | CWE | Report | Vendor |
+|---------|--------------|------|-----|--------|--------|
+| **flac** | TOCTOU Race Condition | `src/share/grabbag/file.c:116` | CWE-367 | [report](libraries/c/flac/flac_toctou-race-condition/manual_confirm/flac_toctou-race-condition.md) | [xiph/flac#902](https://github.com/xiph/flac/issues/902) |
+| **libevent** | Compiler-Elidable memset() | `sha1.c:202` | CWE-14 | [report](libraries/c/libevent/libevent-memset-maybe-deleted/manual_confirm/libevent_menset-may-be-deleted.md) | advance-security (triage) |
+| **vorbis** | Stack Overflow via alloca() in Loop | `lib/vorbisfile.c:2290` | CWE-770 | [report](libraries/c/vorbis/vorbis_alloca-stack-overflow/manual_confirm/vorbis_alloca-stack-overflow.md) | [MR !43](https://gitlab.xiph.org/xiph/vorbis/-/merge_requests/43) |
 
 ### Python
 
-| Library | Vulnerability | File | CWE | Vendor | Report |
-|---------|--------------|------|-----|:------:|--------|
-| | | | | | |
+| Library | Vulnerability | File | CWE | Report | Vendor |
+|---------|--------------|------|-----|--------|--------|
+| **gradio** | Full SSRF via User-Controlled URL | `gradio/image_utils.py:253` | CWE-918 | [report](libraries/python/gradio/manual_confirm/full-ssrf.json) | Security GitHub (triage, private) |
+| **safety** | Credential Leak via Incomplete URL Substring Sanitization | `safety/tool/uv/command.py:72` | CWE-295 | [report](libraries/python/safety/safety_incomplete-url-substring-sanitization/manual_confirm/safety_incomplete-url-substring-sanitization.md) | email (triage) |
 
 ---
 
-## Contributing
+## Teamwork Guidelines
 
 ### Workflow
 
