@@ -1,0 +1,50 @@
+{
+  "finding": {
+    "rule_id": "cpp/alloca-in-loop",
+    "message": "Stack allocation is inside a [for(...;...;...) ...](1) loop.",
+    "file": "lib/vorbisfile.c",
+    "start_line": 2290,
+    "end_line": 2290,
+    "repo_name": "vorbis",
+    "lang": "c",
+    "sarif_path": "/home/caterpie/VulnHunterX/output/c/vorbis/vorbis.sarif",
+    "tool": "CodeQL",
+    "dataflow_path": [],
+    "severity": "7.5",
+    "precision": "high",
+    "cwe_ids": [],
+    "tags": [
+      "reliability",
+      "correctness",
+      "security",
+      "external/cwe/cwe-770"
+    ],
+    "related_locations": []
+  },
+  "verdict": "True Positive",
+  "confidence": "High",
+  "confidence_score": 0.85,
+  "reasoning": "alloca() is called inside a for loop (line 2290) bounded by vi1->channels. While channels is normally 1-2 in legitimate Vorbis files, a maliciously crafted file could set an arbitrarily high channel count, causing unbounded stack growth. Combined with the per-iteration allocation of sizeof(float)*n1 (up to ~16KB), a crafted file could easily overflow the stack. The CodeQL precision is 'high' and severity is 7.5, consistent with a real DoS vulnerability via stack overflow in a library that parses untrusted input.",
+  "answers": [
+    "Yes. `alloca(sizeof(**lappcm)*n1)` is called on line 2290, which is inside a `for` loop iterating over `vi1->channels` (line 2289). Additionally, `alloca(sizeof(*lappcm)*vi1->channels)` is called on line 2282 outside any loop, which is safe.",
+    "The iteration count is bounded by `vi1->channels`, which comes from the Vorbis audio stream header. This value is typically 1 (mono) or 2 (stereo), but could be forged to a higher value in a malicious file. The number of iterations is determined by the number of audio channels in the file.",
+    "The per-iteration allocation size is `sizeof(**lappcm)*n1`, where `sizeof(**lappcm)` is `sizeof(float)` (4 bytes). `n1` is derived from `vorbis_info_blocksize(vi1,0)` (which returns a power of 2 up to 8192 in standard Vorbis) right-shifted by `1+hs1`. So each allocation is bounded to roughly 4*4096 = 16KB in standard configurations. An attacker can influence both channel count and blocksize via a crafted file.",
+    "Default stack sizes are typically 1-8MB depending on the platform. With standard Vorbis channels (1-2), total stack usage is negligible (~16-32KB). However, if a malicious file could specify an arbitrarily high channel count (e.g., 10000 channels), the loop would allocate ~10000*16KB = 160MB, far exceeding any stack limit and causing a stack overflow crash.",
+    "Yes. Using `malloc(sizeof(**lappcm)*n1)` inside the loop, or a single `malloc(sizeof(**lappcm)*n1*vi1->channels)` before the loop with pointer arithmetic, would be safe and functionally equivalent. The allocated memory would be freed before or at function return.",
+    "No. The function `ov_crosslap` is not recursive, so the alloca does not compound with recursion depth. The risk is purely from the loop iteration count."
+  ],
+  "context_needed": [
+    "struct:OggVorbis_File",
+    "struct:vorbis_info"
+  ],
+  "iterations": 1,
+  "model": "glm-5.1",
+  "timestamp": "2026-05-12T14:19:09.512829",
+  "elapsed_seconds": 42.95172309875488,
+  "tokens_used": 2762,
+  "input_tokens": 2040,
+  "output_tokens": 722,
+  "cached_input_tokens": 1216,
+  "cost_usd": 0.0,
+  "data_flow": "source: vi1->channels (from audio file header, line 2289) \u2192 loop bound (line 2289) \u2192 alloca sink (line 2290, called once per channel); source: n1 from vorbis_info_blocksize (line 2283) \u2192 allocation size per iteration (line 2290)"
+}
